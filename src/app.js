@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { MongoClient, ObjectId } from "mongodb";
+import joi from 'joi';
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -8,18 +9,36 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// JOI Schemas 
+
+const schema = joi.object({
+    name: joi.string().required(),
+
+    email: joi.string().required()
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }),
+
+    password: joi.string().required().min(3)
+})
+
+// DB Connection 
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
-let db;
 
-mongoClient.connect()
- .then(() => db = mongoClient.db())
- .catch((err) => console.log(err.message));
+
+try {
+	await mongoClient.connect();
+	console.log('MongoDB Connected!');
+} catch (err) {
+  console.log(err.message);
+}
+
+const db = mongoClient.db();
 
 
 app.post("/poll", (req, res) => {
-	// inserindo usuário
     const { title, expireAt } = req.params;
+
+    if (title && title != null &&) return res.sendStatus(422);
 
 	db.collection("users").insertOne({
 		email: "joao@email.com",
