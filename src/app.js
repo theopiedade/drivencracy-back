@@ -12,12 +12,9 @@ app.use(express.json());
 // JOI Schemas 
 
 const schema = joi.object({
-    name: joi.string().required(),
+    title: joi.string().required(),
 
-    email: joi.string().required()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }),
-
-    password: joi.string().required().min(3)
+    expireAt: joi.string().required()
 })
 
 // DB Connection 
@@ -38,11 +35,12 @@ const db = mongoClient.db();
 app.post("/poll", (req, res) => {
     const { title, expireAt } = req.params;
 
-    if (title && title != null &&) return res.sendStatus(422);
+    const validateSchema = schema.validate(req.body, { abortEarly: false })
+    if (validateSchema.error) return res.sendStatus(422);
 
-	db.collection("users").insertOne({
-		email: "joao@email.com",
-		password: "minha_super_senha"
+	db.collection("survey").insertOne({
+		title: title,
+		expireAt: expireAt
 	}).then(users => res.sendStatus(201))
 		.catch(err => console.log(err.message))
 });
