@@ -3,24 +3,21 @@ import cors from 'cors';
 import { MongoClient, ObjectId } from "mongodb";
 import joi from 'joi';
 import dotenv from "dotenv";
-dotenv.config();
+
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors());
+dotenv.config();
 
 // JOI Schemas 
-
 const schema = joi.object({
     title: joi.string().required(),
-
     expireAt: joi.string().required()
 })
 
 // DB Connection 
-
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
-
 
 try {
 	await mongoClient.connect();
@@ -31,25 +28,33 @@ try {
 
 const db = mongoClient.db();
 
-
-app.post("/poll", (req, res) => {
-    const { title, expireAt } = req.params;
+// BackEnd API functions
+app.post("/poll", async (req, res) => {
+    const {title, expireAt} = req.body;
 
     const validateSchema = schema.validate(req.body, { abortEarly: false })
     if (validateSchema.error) return res.sendStatus(422);
 
-	db.collection("survey").insertOne({
-		title: title,
-		expireAt: expireAt
-	}).then(users => res.sendStatus(201))
-		.catch(err => console.log(err.message))
+	const survey = {
+        title: title,
+        expireAt: expireAt
+    }
+
+   try {
+       await db.collection('surveys').insertOne(survey);
+       return res.sendStatus(201);
+    } 
+    catch (err) {
+       console.log(err);
+       res.sendStatus(500);
+   }
+
 });
 
 
-app.get("/usuarios", (req, res) => {
-	// buscando usuários
-	db.collection("users").find().toArray()
-		.then(users => res.send(users))  // array de usuários
+app.get("/poll", (req, res) => {
+	db.collection("surveys").find().toArray()
+		.then(surveys => res.send(surveys))  // array de usuários
 		.catch(err => res.status(500).send(err.message))  // mensagem de erro
 });
 
