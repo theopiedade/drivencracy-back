@@ -106,7 +106,7 @@ app.post("/choice", async (req, res) => {
 app.get("/poll/:id/choice", async (req, res) => {
   const { id } = req.params;
   try {
-      const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray
+      const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray()
       return res.send(choices);
     } catch (error) {
       console.error(error);
@@ -142,6 +142,22 @@ app.post("/choice/:id/choice", async (req, res) => {
       res.sendStatus(500);
   }
 });
+
+
+app.get("/poll/:id/result", async (req, res) => {
+  const { id } = req.params;
+  try {
+      const votes = await db.collection('votes').find({ choiceId: new ObjectId(id) }).toArray()
+
+
+      return res.send(choices);
+    } catch (error) {
+      console.error(error);
+      return res.status(404).send("Não existe enquete com esse id: "+id);
+    }
+});
+
+
 
 // Tests functions created
 app.get("/choices", async (req, res) => {
