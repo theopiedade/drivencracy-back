@@ -3,10 +3,13 @@ import cors from 'cors';
 import { MongoClient, ObjectId } from "mongodb";
 import joi from 'joi';
 import dotenv from "dotenv";
+import dayjs from 'dayjs';
 
 
 const app = express();
+app.use(cors());
 app.use(express.json());
+dotenv.config();
 
 // JOI Schemas 
 const schema = joi.object({
@@ -28,26 +31,44 @@ try {
 
 const db = mongoClient.db();
 
+// API functions
+app.post("/poll", async (req, res) => {
+    const { title, expireAt } = req.body;
 
-app.post("/poll", (req, res) => {
-    const { title, expireAt } = req.params;
+    let data = "";
+    if (expireAt && expireAt != "") data = expireAt;
+    else data = dayjs(Date.now()).add(30, 'day').format('YYYY-MM-DD HH:mm')
 
-    const validateSchema = schema.validate(req.body, { abortEarly: false })
-    if (validateSchema.error) return res.sendStatus(422);
+    const survey  = {
+        title: title,
+        expireAt: data
+    }
 
-	db.collection("survey").insertOne({
-		title: title,
-		expireAt: expireAt
-	}).then(users => res.sendStatus(201))
-		.catch(err => console.log(err.message))
+    const validateSchema = schema.validate(survey, { abortEarly: false })
+    if (validateSchema.error) return res.status(422).send(data);
+
+	
+
+        try {
+            await db.collection('surveys').insertOne(survey);
+            return res.sendStatus(201);
+         } 
+         catch (err) {
+            console.log(err);
+            res.sendStatus(500);
+        }
+      
 });
 
 
-app.get("/usuarios", (req, res) => {
-	// buscando usuários
-	db.collection("users").find().toArray()
-		.then(users => res.send(users))  // array de usuários
-		.catch(err => res.status(500).send(err.message))  // mensagem de erro
+app.get("/poll", async (req, res) => {
+    try {
+        const surveys = await db.collection('surveys').find().toArray();
+        return res.send(surveys);
+      } catch (error) {
+        console.error(error);
+        return res.sendStatus(500);
+      }
 });
 
 app.post("/choice", async (req, res) => {
