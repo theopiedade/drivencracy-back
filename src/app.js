@@ -17,6 +17,8 @@ const schema = joi.object({
     expireAt: joi.string().required()
 })
 
+const expireSchema = joi.date().greater('now');
+
 // DB Connection 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 
@@ -67,6 +69,38 @@ app.get("/poll", async (req, res) => {
         console.error(error);
         return res.sendStatus(500);
       }
+});
+
+app.post("/choice", async (req, res) => {
+  const { title, pollId } = req.body;
+
+  const checkPoll = await db.collection('surveys').findOne({pollId})
+  if (!checkPoll) return res.status(404).send("ID da enquete não encontrado: "+pollId);
+
+  if (!title || title == null || title == "") return res.status(422).send("Resposta não pode ser vazia");
+
+  const checkTitle = await db.collection('surveys').findOne({title})
+  if (checkTitle) return res.status(409).send("Resposta não pode ser repetida");
+
+  const expireAt = await db.collection('surveys').findOne({pollId}, {expireAt: 1});
+  const result= schema.validate(expireAt);
+  if (!result.error) return res.status(403).send("Enquete já expirada");
+
+ 
+  const choice  = {
+      title: title,
+      pollId: pollId
+  }
+
+      try {
+          await db.collection('choices').insertOne(choice);
+          return res.sendStatus(201);
+       } 
+       catch (err) {
+          console.log(err);
+          res.sendStatus(500);
+      }
+    
 });
 
 
