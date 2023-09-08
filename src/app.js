@@ -146,15 +146,40 @@ app.post("/choice/:id/choice", async (req, res) => {
 
 app.get("/poll/:id/result", async (req, res) => {
   const { id } = req.params;
-  try {
-      const votes = await db.collection('votes').find({ choiceId: new ObjectId(id) }).toArray()
+
+  
+  const survey = await db.collection('surveys').findOne({id});
+  if (!survey) return res.status(404).send("Enquete não existe: "+id);
+
+  const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray()
 
 
-      return res.send(choices);
-    } catch (error) {
-      console.error(error);
-      return res.status(404).send("Não existe enquete com esse id: "+id);
+  let majorVotes = 0;
+  let majorIdVotes = ""; 
+  choices._id.map( choicesId => 
+      {
+        let votes = db.collection.count('votes').find({ choiceId: new ObjectId(choicesId) })
+        if (votes > majorVotes) { 
+          majorVotes = votes;
+          majorIdVotes = choicesId;
+        }
+      }
+    );
+
+ const title = await db.collection('surveys').findOne({id}, {title: 1});
+
+  const result = {
+    _id: id,
+    title: survey.title,
+    expireAt: survey.expireAt,
+    result: {
+      title: title,
+      votes: majorVotes
     }
+  }
+
+  return res.send(result);
+
 });
 
 
@@ -172,7 +197,7 @@ app.get("/choices", async (req, res) => {
 
 app.get("/votes", async (req, res) => {
   try {
-      const choices = await db.collection('votes').find().toArray();
+      const votes = await db.collection('votes').find().toArray();
       return res.send(choices);
     } catch (error) {
       console.error(error);
