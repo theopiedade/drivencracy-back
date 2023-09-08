@@ -74,7 +74,7 @@ app.get("/poll", async (req, res) => {
 app.post("/choice", async (req, res) => {
   const { title, pollId } = req.body;
 
-  const checkPoll = await db.collection('surveys').findOne({pollId})
+  const checkPoll = await db.collection('surveys').find({pollId});
   if (!checkPoll) return res.status(404).send("ID da enquete não encontrado: "+pollId);
 
   if (!title || title == null || title == "") return res.status(422).send("Resposta não pode ser vazia");
