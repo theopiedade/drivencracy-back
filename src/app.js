@@ -89,7 +89,7 @@ app.post("/choice", async (req, res) => {
  
   const choice  = {
       title: title,
-      pollId: pollId
+      pollId: new ObjectId(pollId)
   }
 
       try {
@@ -103,10 +103,10 @@ app.post("/choice", async (req, res) => {
     
 });
 
-app.get("/poll/id:/choice", async (req, res) => {
+app.get("/poll/:id/choice", async (req, res) => {
   const { id } = req.params;
   try {
-      const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray();
+      const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray
       return res.send(choices);
     } catch (error) {
       console.error(error);
@@ -115,6 +115,35 @@ app.get("/poll/id:/choice", async (req, res) => {
 });
 
 
+app.post("/choice/:id/choice", async (req, res) => {
+  const { id } = req.params;
+
+  const checkChoices = await db.collection('choices').findOne({ _id: new ObjectId(id) });
+  if (!checkChoices) return res.status(404).send("Resposta não encontrada: "+id);
+
+  const pollId = await db.collection('choices').findOne({id}, {pollId: 1});
+
+  const expireAt = await db.collection('surveys').findOne({pollId}, {expireAt: 1});
+  const result= schema.validate(expireAt);
+  if (!result.error) return res.status(403).send("Enquete já expirada");
+
+  const vote = {
+    createdAt: dayjs(Date.now()).format('YYYY-MM-DD HH:mm'),
+    choiceId: ObjectId(id)
+  }
+
+
+  try {
+      await db.collection('votes').insertOne(vote);
+      return res.sendStatus(201);
+  } 
+  catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+  }
+});
+
+// Tests functions created
 app.get("/choices", async (req, res) => {
   try {
       const choices = await db.collection('choices').find().toArray();
@@ -124,6 +153,17 @@ app.get("/choices", async (req, res) => {
       return res.sendStatus(500);
     }
 });
+
+app.get("/votes", async (req, res) => {
+  try {
+      const choices = await db.collection('votes').find().toArray();
+      return res.send(choices);
+    } catch (error) {
+      console.error(error);
+      return res.sendStatus(500);
+    }
+});
+
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
