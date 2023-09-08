@@ -83,7 +83,7 @@ app.post("/choice", async (req, res) => {
   if (checkTitle) return res.status(409).send("Resposta não pode ser repetida");
 
   const expireAt = await db.collection('surveys').findOne({pollId}, {expireAt: 1});
-  const result= schema.validate(expireAt);
+  const result= expireSchema.validate(expireAt);
   if (!result.error) return res.status(403).send("Enquete já expirada");
 
  
