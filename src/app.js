@@ -103,6 +103,27 @@ app.post("/choice", async (req, res) => {
     
 });
 
+app.get("/poll/id:/choice", async (req, res) => {
+  const { id } = req.params;
+  try {
+      const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray();
+      return res.send(choices);
+    } catch (error) {
+      console.error(error);
+      return res.status(404).send("Não existe enquete com esse id: "+id);
+    }
+});
+
+
+app.get("/choices", async (req, res) => {
+  try {
+      const choices = await db.collection('choices').find().toArray();
+      return res.send(choices);
+    } catch (error) {
+      console.error(error);
+      return res.sendStatus(500);
+    }
+});
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
