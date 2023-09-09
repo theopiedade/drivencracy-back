@@ -51,7 +51,7 @@ app.post("/poll", async (req, res) => {
 
         try {
             await db.collection('surveys').insertOne(survey);
-            return res.sendStatus(201);
+            return res.status(201).send(survey);
          } 
          catch (err) {
             console.log(err);
@@ -94,7 +94,7 @@ app.post("/choice", async (req, res) => {
 
       try {
           await db.collection('choices').insertOne(choice);
-          return res.sendStatus(201);
+          return res.status(201).send(choice);
        } 
        catch (err) {
           console.log(err);
@@ -135,7 +135,7 @@ app.post("/choice/:id/choice", async (req, res) => {
 
   try {
       await db.collection('votes').insertOne(vote);
-      return res.sendStatus(201);
+      return res.status(201).send(vote);
   } 
   catch (err) {
       console.log(err);
