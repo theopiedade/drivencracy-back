@@ -115,7 +115,7 @@ app.get("/poll/:id/choice", async (req, res) => {
 });
 
 
-app.post("/choice/:id/choice", async (req, res) => {
+app.post("/choice/:id/vote", async (req, res) => {
   const { id } = req.params;
 
   const checkChoices = await db.collection('choices').findOne({ _id: new ObjectId(id) });
@@ -129,7 +129,7 @@ app.post("/choice/:id/choice", async (req, res) => {
 
   const vote = {
     createdAt: dayjs(Date.now()).format('YYYY-MM-DD HH:mm'),
-    choiceId: ObjectId(id)
+    choiceId: new ObjectId(id)
   }
 
 
@@ -147,8 +147,7 @@ app.post("/choice/:id/choice", async (req, res) => {
 app.get("/poll/:id/result", async (req, res) => {
   const { id } = req.params;
 
-  
-  const survey = await db.collection('surveys').findOne({id});
+  const survey = await db.collection('surveys').findOne({ _id: new ObjectId(id) });
   if (!survey) return res.status(404).send("Enquete não existe: "+id);
 
   const choices = await db.collection('choices').find({ pollId: new ObjectId(id) }).toArray()
@@ -156,12 +155,13 @@ app.get("/poll/:id/result", async (req, res) => {
 
   let majorVotes = 0;
   let majorIdVotes = ""; 
-  choices._id.map( choicesId => 
+  choices.map( choices => 
       {
-        let votes = db.collection.count('votes').find({ choiceId: new ObjectId(choicesId) })
-        if (votes > majorVotes) { 
-          majorVotes = votes;
-          majorIdVotes = choicesId;
+        let votes = db.collection('votes').find({ choiceId: new ObjectId(choices.choiceId) }).toArray()
+        let countvotes = votes.length;
+        if (countvotes > majorVotes) { 
+          majorVotes = countvotes;
+          majorIdVotes = choices.choicesId;
         }
       }
     );
@@ -198,7 +198,7 @@ app.get("/choices", async (req, res) => {
 app.get("/votes", async (req, res) => {
   try {
       const votes = await db.collection('votes').find().toArray();
-      return res.send(choices);
+      return res.send(votes);
     } catch (error) {
       console.error(error);
       return res.sendStatus(500);
